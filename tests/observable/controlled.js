@@ -95,3 +95,38 @@ test('controlled gets two sets of values', function () {
     onCompleted(500)
   );
 });
+
+
+test('controlled propagates completions correctly', function() {
+
+    var scheduler = new TestScheduler();
+
+    var results = scheduler.createObserver();
+
+    var xs = scheduler.createHotObservable(
+        onNext(20, 1),
+        onNext(40, 2),
+        onCompleted(50)
+    );
+
+    var controlled = xs.controlled();
+
+    var subscription = null;
+
+    scheduler.scheduleAbsolute(10, function(){
+        subscription = controlled.subscribe(results);
+    });
+
+    scheduler.scheduleAbsolute(60, function(){
+        controlled.request(3);
+    });
+
+    scheduler.scheduleAbsolute(100, function(){
+        subscription.dispose();
+    });
+
+    scheduler.start();
+
+    results.messages.assertEqual(onNext(60, 1), onNext(60, 2), onCompleted(60));
+
+});
