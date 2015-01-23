@@ -1672,7 +1672,8 @@ var browsers = [{
         }
       },
       qunit: {
-          all: ['tests/*.html']
+          all: ['tests/*.html'],
+          backpressure: ['tests/rx.backpressure.html']
       },
       jshint: {
         all: [

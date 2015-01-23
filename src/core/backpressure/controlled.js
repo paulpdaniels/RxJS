@@ -56,22 +56,22 @@
       },
       onNext: function (value) {
         var hasRequested = false;
-        if (!value.hasValue && this.queue.length === 0) {
-          value.accept(this.subject);
+        if (this.enableQueue && !value.hasValue && this.queue.length === 0) {
+          hasRequested = true;
         } else if (this.requestedCount === 0) {
           this.enableQueue && this.queue.push(value);
         } else {
           (this.requestedCount !== -1 && this.requestedCount-- === 0) && this.disposeCurrentRequest();
           hasRequested = true;
         }
-        hasRequested && this.subject.onNext(value);
+        hasRequested && value.accept(this.subject);
       },
       _processRequest: function (numberOfItems) {
         if (this.enableQueue) {
           while (this.queue.length >= numberOfItems && numberOfItems > 0) {
             var next = this.queue.shift();
             next.accept(this.subject);
-            if (next.kind === 'N') numberOfItems--;
+            if (next.hasValue) numberOfItems--;
             else {
                 numberOfItems = 0; this.queue = [];
             }
@@ -80,7 +80,7 @@
           //Immediately propagate completion values without request
           if (this.queue.length > 0 && !this.queue[0].hasValue) {
               var completion = this.queue.shift();
-              completion.accept(completion);
+              completion.accept(this.subject);
               numberOfItems = 0; this.queue = [];
           }
 
