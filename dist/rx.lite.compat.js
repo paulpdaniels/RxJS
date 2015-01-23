@@ -5066,7 +5066,7 @@
     function ControlledObservable (source, enableQueue) {
       __super__.call(this, subscribe, source);
       this.subject = new ControlledSubject(enableQueue);
-      this.source = source.multicast(this.subject).refCount();
+      this.source = source.materialize().multicast(this.subject).refCount();
     }
 
     ControlledObservable.prototype.request = function (numberOfItems) {
@@ -5113,8 +5113,9 @@
       },
       onNext: function (value) {
         var hasRequested = false;
-
-        if (this.requestedCount === 0) {
+        if (!value.hasValue && this.queue.length === 0) {
+          value.accept(this.subject);
+        } else if (this.requestedCount === 0) {
           this.enableQueue && this.queue.push(value);
         } else {
           (this.requestedCount !== -1 && this.requestedCount-- === 0) && this.disposeCurrentRequest();
@@ -5125,8 +5126,19 @@
       _processRequest: function (numberOfItems) {
         if (this.enableQueue) {
           while (this.queue.length >= numberOfItems && numberOfItems > 0) {
-            this.subject.onNext(this.queue.shift());
-            numberOfItems--;
+            var next = this.queue.shift();
+            next.accept(this.subject);
+            if (next.kind === 'N') numberOfItems--;
+            else {
+                numberOfItems = 0; this.queue = [];
+            }
+          }
+
+          //Immediately propagate completion values without request
+          if (this.queue.length > 0 && !this.queue[0].hasValue) {
+              var completion = this.queue.shift();
+              completion.accept(completion);
+              numberOfItems = 0; this.queue = [];
           }
 
           return this.queue.length !== 0 ?
