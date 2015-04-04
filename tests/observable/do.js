@@ -595,4 +595,100 @@
     equal(that, self);
   });
 
+  test('Do_MultipleSubscriptions_OnNext', function() {
+
+    var scheduler = new TestScheduler();
+    var tapObserver = scheduler.createObserver();
+
+    var xs = Rx.Observable.just(1, scheduler)
+        .do(tapObserver.onNext.bind(tapObserver));
+
+    xs.subscribe();
+    xs.subscribe();
+
+    scheduler.start();
+
+    tapObserver.messages.assertEqual(onNext(1, 1), onNext(1, 1));
+
+  });
+
+  test('Do_MultipleSubscriptions_Observer', function(){
+
+    var scheduler = new TestScheduler();
+    var tapObserver = scheduler.createObserver();
+
+    var xs = Rx.Observable.just(1, scheduler)
+        .do(tapObserver);
+
+    xs.subscribe();
+    xs.subscribe();
+
+    scheduler.start();
+
+    tapObserver.messages.assertEqual(
+      onNext(1, 1), onCompleted(1),
+      onNext(1, 1), onCompleted(1));
+
+  });
+
+  test('DoOnNext_MultipleSubscriptions', function(){
+
+    var scheduler = new TestScheduler();
+    var tapObserver = scheduler.createObserver();
+
+    var xs = Rx.Observable.just(1, scheduler)
+        .doOnNext(tapObserver.onNext, tapObserver);
+
+    xs.subscribe();
+    xs.subscribe();
+
+    scheduler.start();
+
+    tapObserver.messages.assertEqual(
+        onNext(1, 1),
+        onNext(1, 1));
+
+  });
+
+  test('DoOnError_MultipleSubscriptions', function(){
+
+    var scheduler = new TestScheduler();
+    var tapObserver = scheduler.createObserver();
+    var results = scheduler.createObserver();
+    var exception = new Error();
+
+    var xs = Rx.Observable.throw(exception, scheduler)
+        .doOnError(tapObserver.onError, tapObserver);
+
+    //Have to handle the results or subscribe throws
+    xs.subscribe(results);
+    xs.subscribe(results);
+
+    scheduler.start();
+
+    tapObserver.messages.assertEqual(
+        onError(1, exception),
+        onError(1, exception));
+
+  });
+
+  test('DoOnCompleted_MultipleSubscriptions', function(){
+
+    var scheduler = new TestScheduler();
+    var tapObserver = scheduler.createObserver();
+
+    var xs = Rx.Observable.just(1, scheduler)
+        .doOnCompleted(tapObserver.onCompleted, tapObserver);
+
+    xs.subscribe();
+    xs.subscribe();
+
+    scheduler.start();
+
+    tapObserver.messages.assertEqual(
+        onCompleted(1),
+        onCompleted(1));
+
+  });
+
 }());
