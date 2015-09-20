@@ -7,7 +7,11 @@
 
     FromPromiseObservable.prototype.subscribeCore = function(o) {
       this.p.then(function (data) {
-        o.onNext(data);
+        var result = tryCatch(o.onNext).call(o, data);
+        if (result === errorObj) {
+          return o.onError(result.e);
+        }
+
         o.onCompleted();
       }, function (err) { o.onError(err); });
       return disposableEmpty;
