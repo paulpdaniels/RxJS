@@ -30,7 +30,7 @@
 
     var observer = Rx.Observer.create(
       function (x) {
-        var retValue = onResolved(x);
+        var retValue = onResolved && onResolved(x);
         if (retValue && typeof retValue.then === 'function') {
           newPromise = retValue;
         } else {
@@ -42,7 +42,7 @@
         self.subscriptions[index] = new Subscription(self.subscriptions[index].subscribe, self.scheduler.clock);
       },
       function (err) {
-        onRejected(err);
+        onRejected && onRejected(err);
         var idx = self.observers.indexOf(observer);
         self.observers.splice(idx, 1);
         self.subscriptions[index] = new Subscription(self.subscriptions[index].subscribe, self.scheduler.clock);
@@ -51,4 +51,8 @@
     this.observers.push(observer);
 
     return newPromise || new MockPromise(this.scheduler, this.messages);
+  };
+
+  MockPromise.prototype['catch'] = function(onRejected) {
+    return this.then(null, onRejected);
   };

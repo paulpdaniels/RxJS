@@ -82,4 +82,29 @@
         ok(false);
       });
   });
+
+  test('promise onNext Failure', function() {
+    var error = new Error('woops');
+    var scheduler = new TestScheduler();
+    var promise = scheduler.createRejectedPromise(202, error);
+    var source = Rx.Observable.fromPromise(promise);
+    var result = scheduler.createObserver();
+
+    source.subscribe(function() {
+      throw error;
+    }, function(err) {
+      result.onError(err);
+    }, function(){
+      result.onCompleted();
+    });
+
+    scheduler.start();
+
+    result.messages.assertEqual(
+      onError(202, error)
+    );
+
+
+
+  })
 }());
